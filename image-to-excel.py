@@ -42,6 +42,8 @@ startRecord = False
 skipDate = False
 lastRow = False
 firstRow = False
+purposeList = []
+search_value = '地址'
 date_pattern = re.compile(r'\d{4}/\d{2}/\d{2}')
 amount_pattern = re.compile(r'\d*\.\d{2}')
 
@@ -78,18 +80,29 @@ for filename in os.listdir(directory):
                                 skipDate = False
                                 continue
                         elif (line.text == "承前結餘"):
-                            ws1.cell(row_start, 6).value = line.text
+                            purposeList.append(line.text)
                         elif (amount_pattern.search(line.text)):
                             totalAmount = float(line.text.replace(",", ""))
                             ws1.cell(row_start, 9).value = totalAmount
                             firstRow = False
-                            row_start += 1
                             continue
                     elif (startRecord == True and firstRow == False):
                         if (line.text == "月結單日期"):
                             skipDate = True
                         if (date_pattern.search(line.text)):
                             if (skipDate == False):
+                                # Find the index of the first occurrence of search_value
+                                index_of_search_value = -1
+                                for i, item in enumerate(purposeList):
+                                    if search_value in item:
+                                        index_of_search_value = i
+                                        break
+                                # Remove elements starting from the index of the first occurrence of search_value
+                                if index_of_search_value!= -1:
+                                    purposeList = purposeList[:index_of_search_value]
+                                ws1.cell(row_start, 6).value = " ".join(purposeList)
+                                purposeList.clear()
+                                row_start += 1
                                 dates = line.text.split(" ")
                                 if (len(dates) == 1):
                                     ws1.cell(row_start, 2).value = dates[0]
@@ -104,6 +117,17 @@ for filename in os.listdir(directory):
                         elif (amount_pattern.search(line.text)):
                             if (lastRow == True): 
                                 ws1.cell(row_start, 9).value = float(line.text.replace(",", ""))
+                                # Find the index of the first occurrence of search_value
+                                index_of_search_value = -1
+                                for i, item in enumerate(purposeList):
+                                    if search_value in item:
+                                        index_of_search_value = i
+                                        break
+                                # Remove elements starting from the index of the first occurrence of search_value
+                                if index_of_search_value!= -1:
+                                    purposeList = purposeList[:index_of_search_value]
+                                ws1.cell(row_start, 6).value = " ".join(purposeList)
+                                purposeList.clear()
                                 break
                             else: 
                                 amountCalculation[amountCount] = float(line.text.replace(",", ""))
@@ -118,9 +142,11 @@ for filename in os.listdir(directory):
                                         ws1.cell(row_start, 7).value = amountCalculation[0]
                                     ws1.cell(row_start, 9).value = amountCalculation[1]
                                     totalAmount = amountCalculation[1]
+                                    
                                     amountCount = 0
-                                    row_start += 1
                                     continue
+                        else:
+                            purposeList.append(line.text)
 
 wb.save("book_eg.xlsx")
 
